@@ -1,0 +1,1506 @@
+---
+title: "Auswertung"
+author: "Karla, Emi, Urs, Vinzenz"
+date: "15 6 2021"
+output: pdaten_document
+---
+#ihr musst die packages einmalig installierem z.B. 'install.packages("ggplot2")' (geht easy unten in der console)
+```{r, message = FALSE, warning = FALSE}
+library("dummies")
+library("Metrics")
+library("GGally")
+library("zoo")
+library("forecast")
+library("ggplot2")
+library("tidyverse")
+library("reshape2")
+library("quantreg")
+```
+
+## R Markdown
+
+```{r}
+#Laden der Daten
+
+#daten = read.csv2("name der Csv Datei")
+#cat("\n")
+
+#summary(daten)
+#cat("\n")
+
+#str(daten)
+
+# set the path where you data is.
+#setwd("git.tu-berlin.de/atomos20/visuelle-wahrnehmung-projekt.git")
+
+
+daten = read.csv2("all-post-processed.csv",sep = ",")
+
+################################################################################
+##### Some sanity checks ######
+
+# explore the first entries in your data
+head(daten)
+
+daten$qCHR = as.character(daten$q)
+
+```
+
+
+
+```{r}
+#alle Daten analysieren 
+
+#alleQ0 = data.frame(subset(daten, q=="0"))
+alleQ2 = data.frame(subset(daten, q=="2"))
+alleQ8 = data.frame(subset(daten, q=="8"))
+alleQ16 = data.frame(subset(daten, q=="16"))
+alleQ32 = data.frame(subset(daten, q=="32"))
+alleQ64 = data.frame(subset(daten, q=="64"))
+
+tail(alleQ2)
+
+alleQBind = merge(alleQ2,alleQ8)
+head(alleQBind)
+
+#Durchschnittliche Bewertung der Quantifizierungen
+averageQ = sort(tapply(daten$response, daten$q, mean))
+averageQ
+
+#ggplot(data=daten,
+#       aes(x=, y= q))+
+#  geom_bar()
+
+
+```
+
+
+
+```{r}
+
+
+datenR = data.frame(subset(daten, r.g.b=="r"))
+datenB = data.frame(subset(daten, r.g.b=="b"))
+datenG = data.frame(subset(daten, r.g.b=="g"))
+
+averageAll = sort(tapply(daten[datenR$test_image=="landscape-mountains-1",]$response, daten[datenR$test_image=="landscape-mountains-1",]$q, mean))
+averageR = sort(tapply(daten[daten$r.g.b=="r",]$response, daten[daten$r.g.b=="r",]$q, mean))
+averageB = sort(tapply(daten[daten$r.g.b=="b",]$response, daten[daten$r.g.b=="b",]$q, mean))
+averageG = sort(tapply(daten[daten$r.g.b=="g",]$response, daten[daten$r.g.b=="g",]$q, mean))
+cat("rot \n")
+averageR
+cat("blau \n")
+averageB
+cat("grün \n")
+averageG
+
+averageAll
+
+averageG2 = ordered(tapply(daten[daten$r.g.b=="g",]$response, daten[daten$r.g.b=="g",]$q, mean),  levels=c(2, 8, 16,32,64))
+averageG2
+
+averageRMountain = sort(tapply(datenR[datenR$test_image=="landscape-mountains-1",]$response,datenR[datenR$test_image=="landscape-mountains-1",]$q, mean))
+averageBMountain = sort(tapply(datenB[datenB$test_image=="landscape-mountains-1",]$response,datenB[datenB$test_image=="landscape-mountains-1",]$q, mean))
+averageGMountain = sort(tapply(datenG[datenG$test_image=="landscape-mountains-1",]$response,datenG[datenG$test_image=="landscape-mountains-1",]$q, mean))
+
+cat("Grün \n")
+averageGMountain
+cat("Rot \n")
+averageRMountain
+cat("Blau \n")
+averageBMountain
+
+cat("Rot \n")
+averageR
+cat("blau \n")
+averageB
+cat("grün \n")
+averageG
+
+
+ggplot(data = NULL,aes(group=3,ymin = 1, ymax = 5)) + 
+  geom_line(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+                             y = averageR, 
+                             colour = 'red', group = "red")) +
+  geom_point(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+                             y = averageR, 
+                             colour = 'red', group = "red"))+
+  geom_line(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+                             y = averageB, 
+                             colour = 'blue', group = "blue")) +
+  geom_point(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+                             y = averageB, 
+                             colour = 'blue', group = "blue")) +
+  geom_line(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+                             y = averageG, 
+                             colour = 'green', group = "green")) +
+  geom_point(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+                             y = averageG, 
+                             colour = 'green', group = "green")) +
+  scale_colour_manual("Kategorie", breaks = 
+                        c("blue","red","green"), values = c("blue","red", "green")) +
+#  scale_x_discrete(breaks = c(0,2, 8, 16, 32, 64)) +
+  labs(title = "Alle", x = "Quantifizierung", y = "Quality") 
+  
+
+#ggplot(data = NULL,aes(group=3,ymin = 1, ymax = 5.3)) + 
+#  geom_path(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+ #                            y = averageR, 
+  #                           colour = 'red', group = "red")) +
+  #geom_path(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+   #                          y = averageB, 
+    #                         colour = 'blue', group = "blue")) +
+#  geom_line(data = NULL, aes(x = unique(daten[daten$q!="0",]$q),
+  #                           y = averageG, 
+ #                            colour = 'green', group = "green")) +
+
+  #scale_colour_manual("Kategorie", breaks = 
+ #                       c("blue","red","green"), values = c("blue","red", "green")) +
+#  scale_x_discrete(breaks = c(0,2, 8, 16, 32, 64)) +
+#  labs(title = "Alle", x = "Quantifizierung", y = "Quality") 
+
+#ggplot(data=daten, aes(x=factor(r.g.b), y=response, group=q)) + 
+#  geom_point() + 
+#  geom_line() + 
+#  facet_grid(r.g.b ~ q) 
+
+```
+
+```{r}
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+#Alle
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+
+
+
+
+
+
+
+
+```
+
+
+
+#Alle
+```{r}
+
+
+#daten$qCHR <-reorder(daten$qCHR, daten$qCHR, median)
+#Desto besser desto grüner
+
+#Ohne Original
+ggplot(daten, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Alle") 
+
+#wenn alle Daten richtig benannt sind:
+ggplot(daten, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Alle")
+
+ggplot(daten, 
+       aes(x = r.g.b, y = reorder(qCHR,-response, na.rm = TRUE), fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Alle") 
+
+#wenn alle Daten richtig benannt sind:
+ggplot(daten, 
+       aes(x = r.g.b, y = reorder(qCHR,-response, na.rm = TRUE), fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Alle")
+
+
+ggplot(daten, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+ggplot(daten, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+
+ggplot(daten, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))+
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+
+ggplot(daten, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() +
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+ggplot(daten, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") +
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+
+ggplot(daten, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))+
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+ggplot(daten, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() +
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+ggplot(daten, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") +
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+ggplot(daten, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))+
+  labs( x = "RGB", y = "Quality", title = "Alle")
+
+
+
+
+
+ggplot(daten, aes(y=response, x=q, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle")
+
+
+   
+
+
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Woman Portrait
+```{r}
+womenPortrait = data.frame(subset(daten, test_image == "women-portrait"))
+womenPortrait2 = data.frame(subset(daten, test_image == "women-portrait" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(womenPortrait2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Women Potrait") 
+
+#wenn alle Daten richtig benannt sind:
+ggplot(womenPortrait, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Women Potrait")
+
+
+ggplot(womenPortrait, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(womenPortrait, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(womenPortrait, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+ggplot(womenPortrait, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(womenPortrait, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(womenPortrait, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+
+ggplot(womenPortrait, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(womenPortrait, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(womenPortrait, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+```
+
+
+
+
+
+
+
+#landscape-mountains-1
+```{r}
+landscapeMountains1 = data.frame(subset(daten, test_image == "landscape-mountains-1"))
+landscapeMountains12 = data.frame(subset(daten, test_image == "landscape-mountains-1" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(landscapeMountains12, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "landscape-mountains-1") 
+
+ggplot(landscapeMountains1, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "landscape-mountains-1")
+
+
+ggplot(landscapeMountains1, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(landscapeMountains1, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(landscapeMountains1, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+
+ggplot(landscapeMountains1, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(landscapeMountains1, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(landscapeMountains1, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+
+ggplot(landscapeMountains1, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(landscapeMountains1, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(landscapeMountains1, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+
+
+```
+
+#sunflower
+```{r}
+sunflower = data.frame(subset(daten, test_image == "sunflower"))
+sunflower2 = data.frame(subset(daten, test_image == "sunflower" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(sunflower2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Sunflower") 
+
+ggplot(sunflower, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "Sunflower")
+
+
+ggplot(sunflower, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(sunflower, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(sunflower, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+ggplot(sunflower, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(sunflower, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(sunflower, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+
+
+
+ggplot(sunflower, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(sunflower, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(sunflower, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+
+
+```
+
+
+#portrait-man
+```{r}
+portraitMan = data.frame(subset(daten, test_image == "protrait-man"))
+portraitMan2 = data.frame(subset(daten, test_image == "protrait-man" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(portraitMan2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "portrait-man") 
+
+ggplot(portraitMan, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "portrait-man")
+
+
+ggplot(portraitMan, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(portraitMan, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(portraitMan, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+
+ggplot(portraitMan, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(portraitMan, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(portraitMan, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+
+
+ggplot(portraitMan, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(portraitMan, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(portraitMan, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+#boy
+```{r}
+boy = data.frame(subset(daten, test_image == "boy"))
+boy2 = data.frame(subset(daten, test_image == "boy" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(boy2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "boy") 
+
+ggplot(boy, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "boy")
+
+
+ggplot(boy, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(boy, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(boy, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+
+
+ggplot(boy, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(boy, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(boy, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+ggplot(boy, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(boy, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(boy, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+
+```
+
+
+
+#buildings
+```{r}
+buildings = data.frame(subset(daten, test_image == "buildings-1"))
+buildings2 = data.frame(subset(daten, test_image == "buildings-1" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(buildings2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "buildings") 
+
+ggplot(buildings, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "buildings")
+
+
+ggplot(buildings, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(buildings, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(buildings, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+
+
+ggplot(buildings, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(buildings, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(buildings, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+
+
+ggplot(buildings, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(buildings, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(buildings, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+```
+
+
+
+
+#chameleon
+```{r}
+chameleon = data.frame(subset(daten, test_image == "chameleon"))
+chameleon2 = data.frame(subset(daten, test_image == "chameleon" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(chameleon2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "chameleon") 
+
+ggplot(chameleon, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "chameleon")
+
+
+ggplot(chameleon, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(chameleon, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(chameleon, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+
+ggplot(chameleon, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(chameleon, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(chameleon, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+
+
+ggplot(chameleon, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(chameleon, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(chameleon, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+
+
+```
+
+
+
+
+
+#colorfulFlowers
+```{r}
+colorfulFlowers = data.frame(subset(daten, test_image == "colorful-flowers"))
+colorfulFlowers2 = data.frame(subset(daten, test_image == "colorful-flowers" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(colorfulFlowers2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "colorfulFlowers") 
+
+ggplot(colorfulFlowers, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "colorfulFlowers")
+
+
+ggplot(colorfulFlowers, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(colorfulFlowers, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(colorfulFlowers, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+
+ggplot(colorfulFlowers, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(colorfulFlowers, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(colorfulFlowers, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+
+ggplot(colorfulFlowers, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(colorfulFlowers, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(colorfulFlowers, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+
+
+```
+
+
+
+#parrot
+```{r}
+parrot = data.frame(subset(daten, test_image == "parrot-1"))
+parrot2 = data.frame(subset(daten, test_image == "parrot-1" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(parrot2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "parrot") 
+
+ggplot(parrot, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "parrot")
+
+
+ggplot(parrot, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(parrot, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(parrot, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+ggplot(parrot, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(parrot, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(parrot, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+ggplot(parrot, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(parrot, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(parrot, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+```
+
+
+
+#womenPortraitBlue
+```{r}
+womenPortraitBlue = data.frame(subset(daten, test_image == "women-portrait-blue"))
+womenPortraitBlue2 = data.frame(subset(daten, test_image == "women-portrait-blue" & r.g.b != "n"))
+
+#Desto besser desto grüner
+#Ohne Original
+ggplot(womenPortraitBlue2, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "womenPortraitBlue") 
+
+ggplot(womenPortraitBlue, 
+       aes(x = r.g.b, y = q, fill = response)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs( x = "RGB", y = "Quantifizierung", title = "womenPortraitBlue")
+
+
+ggplot(womenPortraitBlue, 
+       aes(x = r.g.b, y = response)) + 
+  geom_boxplot() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+ggplot(womenPortraitBlue, 
+       aes(x = r.g.b, y = response)) + 
+  geom_violin(scale = "area") +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) 
+
+
+ggplot(womenPortraitBlue, 
+       aes(x = r.g.b, y = response , colour = r.g.b)) + 
+  geom_count() +
+  scale_colour_manual("r.g.b", breaks = c("b","g","n","r"), values = c("blue","green", "black","red")) +
+   scale_radius(range = c(1,12))
+
+ggplot(womenPortraitBlue, 
+       aes(x = q, y = response,group=q)) + 
+  geom_boxplot() 
+
+ggplot(womenPortraitBlue, 
+       aes(x = q, y = response,group=q)) + 
+  geom_violin(scale = "area") 
+
+
+ggplot(womenPortraitBlue, 
+       aes(x = q, y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12))
+
+
+ggplot(womenPortraitBlue, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_boxplot() + xlab("Quantifizierung")
+
+ggplot(womenPortraitBlue, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response)) + 
+  geom_violin(scale = "area") + xlab("Quantifizierung")
+
+ggplot(womenPortraitBlue, 
+       aes(x=reorder(qCHR,-response, na.rm = TRUE), y = response , colour = q)) + 
+  geom_count() +
+   scale_radius(range = c(1,12)) + xlab("Quantifizierung")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# sanity checks: how many groups do you expect per categorical variable?
+# in these data we expect :
+# 6 different q values (k)
+q_values <- unique(daten$q)
+cat("q_values \n")
+print(q_values)
+cat("end q_values \n")
+
+# 4 different rgb values (g)
+rgb_values <- unique(daten$r.g.b)
+print(rgb_values)
+
+
+# 10 different pictures
+unique(daten$test_image)
+
+
+# we expect 3x5+1=16 different rows of possible q, rgb combinations
+agg1 <- aggregate(daten$response, 
+                  by = list(q=daten$q, rgb=daten$r.g.b), 
+                  FUN = length)
+
+print(agg1)
+
+print(nrow(agg1))
+
+
+
+# and 16 x 10 pictures = 160  different types of trials
+agg2 <- aggregate(daten$response, 
+                  by = list(q=daten$q, rgb=daten$r.g.b, test_image=daten$test_image), 
+                  FUN = length)
+nrow(agg2)
+
+# each of them with one entry
+print(agg2)
+
+```
+
+
+
+
+```{r}
+
+#data$qCHR <- factor(data$qCHR , levels=c("0", "2", "8", "16","32","64"))
+
+
+#Alle
+ggplot(daten,  aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Alle") 
+  
+#boy
+ggplot(daten[daten$test_image == "boy", ],  aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Boy")
+
+
+#buildings
+ggplot(daten[daten$test_image == "buildings-1", ],  aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "buildings")
+
+
+#chameleon
+ggplot(daten[daten$test_image == "chameleon", ],  aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "chameleon")
+
+
+#colorfulFlowers
+ggplot(daten[daten$test_image == "colorful-flowers", ],  aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "colorfulFlowers")
+
+
+#landscapeMountains1
+ggplot(daten[daten$test_image == "landscape-mountains-1", ], aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Landscape Mountains")
+
+
+#parrot
+ggplot(daten[daten$test_image == "parrot-1", ], aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Parrot")
+
+
+#portraitMan
+ggplot(daten[daten$test_image == "protrait-man", ], aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "portraitMan")
+
+
+#sunflower
+ggplot(daten[daten$test_image == "sunflower", ],  aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "Sunflower")
+
+
+#womenPortrait
+ggplot(daten[daten$test_image == "women-portrait", ], aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot() +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) +
+  labs( x = "Quantifizierung", y = "Quality", title = "womenPortrait")
+
+
+
+
+
+#womenPortraitBlue
+ggplot(daten[daten$test_image == "women-portrait-blue", ], aes(x=reorder(qCHR,-response, na.rm = TRUE), y=response, fill=factor(r.g.b))) +
+  geom_boxplot()  +
+  scale_fill_manual("r.g.b",values = c("blue","green","grey","red")) + 
+  labs( x = "Quantifizierung", y = "Quality", title = "womenPortraitBlue") 
+  
+
+
+
+
+```
+
+
+```{r}
+################################################################################
+#### Creating some visualizations #######
+### we make a barplot using base R (we avoid to use ggplot on purpose here, 
+# the logic of ggplot can be complicated to understand at first...)
+
+###########################
+###### for one picture
+picname <- 'sunflower'
+
+# I select the data from the main dataframe 
+onepicSunflower <- daten[daten$test_image==picname,]
+
+# we aggregate around q values
+agg_q <- aggregate(onepicSunflower$response, by=list(q=onepicSunflower$q), FUN=mean)
+
+agg_q.sd <- aggregate(onepicSunflower$response, by=list(q=onepicSunflower$q), FUN=sd)
+
+barCenters <- barplot(agg_q$x, names.arg = agg_q$q, xlab='Quantifizierung', 
+                      ylab='Quaility/Qualitat', ylim = c(0, 5.3), col='#e34a33')
+arrows(barCenters, agg_q$x - agg_q.sd$x, 
+       barCenters, agg_q$x + agg_q.sd$x,
+       lwd = 3, angle = 90,
+       code = 3, length = 0.05)
+
+title(paste('Picture:', picname, sep=' '))
+
+# we aggregate around rgb values
+agg_rgb <- aggregate(onepicSunflower$response, by=list(g=onepicSunflower$r.g.b), FUN=mean)
+
+agg_rgb.sd <- aggregate(onepicSunflower$response, by=list(g=onepicSunflower$r.g.b), FUN=sd)
+
+barCenters <- barplot(agg_rgb$x, names.arg = agg_rgb$g, xlab='RGB-Values', ylab='Quality/Qualitat', 
+                      ylim = c(0, 5.3), col='#3182bd')
+arrows(barCenters, agg_rgb$x - agg_rgb.sd$x, 
+       barCenters, agg_rgb$x + agg_rgb.sd$x,
+       lwd = 3, angle = 90,
+       code = 3, length = 0.05)
+
+title(paste('Picture:', picname, sep=' '))
+
+
+
+
+```
+```{r}
+###############################
+# either for all pictures
+d <- daten
+picname <- 'All'
+
+# or for only one picture
+#d <- onepicSunflower
+
+#Ohne 0 bzw Original Bild
+#q_values1 = subset(q_values, q_values >=1)
+#q_values1
+
+# to create a barplot for all k and g combinations, we need to create a dataframe 
+# where rows and columns are k and g 
+agg_mean <- aggregate(d$response, by=list(rgb=d$r.g.b,q=d$q), FUN=mean)
+colnames(agg_mean)[3] <- 'response'
+
+# reshape convert the table from "long" to "wide" format, 
+# taking the idvar column as an index,timevar as the variable that will become the columns.
+agg_mean <- reshape(agg_mean[agg_mean$q!=0, ], idvar = "q", timevar = 'rgb', direction = "wide")
+
+# we assign the values of k to each row.
+print(agg_mean)
+rownames(agg_mean) <- agg_mean$q
+# now we can drop the first column 
+print(agg_mean)
+agg_mean <- agg_mean[-c(1)]
+print(agg_mean)
+
+
+#colnames(agg_mean) <- q_values  # brauchen Sie nicht..
+
+
+print(agg_mean)
+
+
+# now we can finally plot
+# a palette of 5 Greens (from https://colorbrewer2.org/)
+
+# GA: Suchen sie andere Farben, vielleicht rot, gruen und blau.
+
+palette <- c('#edaten8e9', '#bae4b3', '#74c476')
+
+# calls barplot function
+barCenters <- barplot(t(as.matrix(agg_mean)), beside=TRUE, xlab='Quantifizierung', 
+                      ylab="Quality", 
+                       ylim=c(1, 5))
+box(bty="l")
+legend("topright", legend = rownames(agg_mean), fill=palette, title='RBG')
+title(paste('Picture:', picname, sep=' '))
+
+
+# Sie können mit einer horizontalen Linie die "baseline" markieren, für q = 0 und rgb=n
+```
+```{r}
+###############################
+# either for all pictures
+d <- subset(daten, daten$q != 0 & daten$r.g.b != "n")
+picname <- 'All'
+
+# or for only one picture
+#d <- onepicSunflower
+
+#Ohne 0 bzw Original Bild
+#q_values1 = subset(q_values, q_values >=1)
+#q_values1
+
+# to create a barplot for all k and g combinations, we need to create a dataframe 
+# where rows and columns are k and g 
+agg_mean <- aggregate(d$response, by=list(rgb=d$r.g.b,q=d$q), FUN=mean)
+colnames(agg_mean)[3] <- 'response'
+
+q_values2 = subset(q_values, q_values != 0)
+# reshape convert the table from "long" to "wide" format, 
+# taking the idvar column as an index,timevar as the variable that will become the columns.
+#agg_mean <- reshape(agg_mean, idvar = "q", timevar = 'rgb', direction = "wide")
+agg_mean <- reshape(agg_mean, idvar = "rgb", timevar = 'q', direction = "wide")
+# we assign the values of k to each row.
+print(agg_mean)
+rownames(agg_mean) <- agg_mean$q
+# now we can drop the first column 
+print(agg_mean)
+agg_mean <- agg_mean[-c(1)]
+print(agg_mean)
+print(q_values2)
+colnames(agg_mean) <- q_values2
+
+
+#print(agg_mean)
+
+
+# now we can finally plot
+# a palette of 5 Greens (from https://colorbrewer2.org/)
+#palette <- c('#edaten8e9', '#bae4b3', '#74c476', '#31a354', '#006d2c')
+palette <- c("blue", "red", "yellow", "green", "black")
+
+
+barCenters <- barplot(t(as.matrix(agg_mean)), beside=TRUE, xlab='Quantifizierung', 
+                      ylab="Quality", 
+                     ylim=c(1, 5))
+box(bty="l")
+legend("topright", legend = rownames(agg_mean), fill=palette, title='RBG')
+title(paste('Picture:', picname, sep=' '))
+# calls barplot function
+#barCenters <- barplot(t(as.matrix(agg_mean)), beside=TRUE, xlab='Quantifizierung', 
+ #                     ylab="Quality", 
+#                      col = palette, ylim=c(1, 5))
+#box(bty="l")
+#legend("topright", legend = rownames(agg_mean), fill=palette, title='RBG')
+#title(paste('Picture:', picname, sep=' '))
+
+
+# I didn't do the panels, 
+# it's more complicated to do without ggplot
+
+
+
+```
+
+
+
+
+
+```{r}
+######## Some statistical analysis #######
+### t-test
+#??
+
+k0<- daten[daten$q==0,]
+k1 <- daten[daten$q==2,]
+k2 <- daten[daten$q==8,]
+k3 <- daten[daten$q==16,]
+k4 <- daten[daten$q==32,]
+k5 <- daten[daten$q==64,]
+
+
+t.test(k0$response, k1$response)
+t.test(k0$response, k2$response)
+t.test(k0$response, k3$response)
+t.test(k0$response, k4$response)
+t.test(k0$response, k5$response)
+
+t.test(k1$response, k2$response)
+t.test(k1$response, k3$response)
+t.test(k1$response, k4$response)
+t.test(k1$response, k5$response)
+
+t.test(k2$response, k3$response)
+t.test(k2$response, k4$response)
+t.test(k2$response, k5$response)
+
+t.test(k3$response, k4$response)
+t.test(k3$response, k5$response)
+
+t.test(k4$response, k5$response)
+
+#### Two-way ANOVA
+# setting up variables k and g as categorical data (as factors)
+daten$q <- as.factor(daten$q)
+daten$rgb <- as.factor(daten$r.g.b)
+
+# ANOVA call
+res.aov <- aov(response ~ q + r.g.b, data=daten)
+
+print(summary(res.aov))
+
+# post-hoc test: t-tests with Bonferroni correction
+ph <- pairwise.t.test(daten$response, daten$q, 
+                paired=FALSE, p.adjust.method='bonf')
+
+
+print(ph)
+
+# EOF
+
+```
+
+
+```{r}
+
+
+```
